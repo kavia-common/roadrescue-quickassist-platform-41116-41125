@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import "./App.css";
+import "./theme.css";
 
 /**
  * RoadRescue QuickAssist — React Frontend (single-file UI scaffold)
@@ -8,15 +8,17 @@ import "./App.css";
  *   REACT_APP_SUPABASE_URL / REACT_APP_SUPABASE_KEY.
  */
 
-// Executive Gray theme palette (from style guide)
+// Business theme palette (must match theme.css variables)
 const THEME = {
-  primary: "#374151",
-  secondary: "#9CA3AF",
+  background: "#F3F4F6",
+  surface: "#FFFFFF",
+  primary: "#1F2937",
+  accent: "#2563EB",
+  text: "#111827",
+  muted: "#6B7280",
   success: "#059669",
   error: "#DC2626",
-  background: "#F9FAFB",
-  surface: "#FFFFFF",
-  text: "#111827",
+  warning: "#D97706",
 };
 
 const PORTALS = {
@@ -54,8 +56,8 @@ function nowIso() {
 // PUBLIC_INTERFACE
 function App() {
   /**
-   * NOTE: Template App.css supports light/dark via data-theme; we keep it on "light"
-   * but apply Executive Gray palette via inline styles for this screen.
+   * Keep the original data-theme attribute (template behavior), but visual look is controlled
+   * by theme.css (business theme).
    */
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", "light");
@@ -207,15 +209,16 @@ function App() {
 
   const buildEstimatePlaceholder = (issueType) => {
     // Simple deterministic placeholder model; keeps UI consistent for demos.
-    const base = {
-      "Flat Tire": 85,
-      "Battery Jump": 65,
-      "Lockout": 75,
-      "Fuel Delivery": 90,
-      "Tow Needed": 160,
-      "Engine Trouble": 140,
-      "Other": 110,
-    }[issueType] ?? 110;
+    const base =
+      {
+        "Flat Tire": 85,
+        "Battery Jump": 65,
+        Lockout: 75,
+        "Fuel Delivery": 90,
+        "Tow Needed": 160,
+        "Engine Trouble": 140,
+        Other: 110,
+      }[issueType] ?? 110;
 
     // Add a small range
     const low = clamp(base - 15, 40, 999);
@@ -286,14 +289,8 @@ function App() {
           ...prev,
           status: "Dispatched",
           mechanic: { ...prev.mechanic, assigned: true, name: "Jordan (Mechanic)", etaMins: 14, vehicle: "Service Van #12" },
-          timeline: [
-            ...prev.timeline,
-            { at: nowIso(), status: "Dispatched", note: "Mechanic assigned and dispatched." },
-          ],
-          chat: [
-            ...prev.chat,
-            { from: "mechanic", at: nowIso(), text: "Hi! I'm on my way. Can you confirm you're in a safe spot?" },
-          ],
+          timeline: [...prev.timeline, { at: nowIso(), status: "Dispatched", note: "Mechanic assigned and dispatched." }],
+          chat: [...prev.chat, { from: "mechanic", at: nowIso(), text: "Hi! I'm on my way. Can you confirm you're in a safe spot?" }],
         };
       });
     }, 1200);
@@ -348,10 +345,7 @@ function App() {
       return {
         ...prev,
         payment: { status: "initiated", lastActionAt: nowIso() },
-        chat: [
-          ...prev.chat,
-          { from: "system", at: nowIso(), text: "Payment flow initiated (stub). No charge was made." },
-        ],
+        chat: [...prev.chat, { from: "system", at: nowIso(), text: "Payment flow initiated (stub). No charge was made." }],
       };
     });
   };
@@ -425,269 +419,77 @@ function App() {
 
   const isAuthedForPortal = authUser && authUser.role === activePortal;
 
-  // ----- Styles (inline; do not require App.css changes) -----
-  const styles = useMemo(() => {
-    const shadow = "0 10px 30px rgba(17, 24, 39, 0.08)";
-    const subtleShadow = "0 6px 18px rgba(17, 24, 39, 0.08)";
-    const border = `1px solid rgba(17, 24, 39, 0.08)`;
-
-    const btnBase = {
-      width: "100%",
-      padding: "14px 14px",
-      borderRadius: 12,
-      border,
-      fontWeight: 700,
-      fontSize: 16,
-      cursor: "pointer",
-    };
-
-    return {
-      page: {
-        minHeight: "100vh",
-        background: THEME.background,
-        color: THEME.text,
-        fontFamily: "Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif",
-      },
-      topBar: {
-        position: "sticky",
-        top: 0,
-        zIndex: 5,
-        background: THEME.surface,
-        borderBottom: border,
-      },
-      topBarInner: {
-        maxWidth: 1100,
-        margin: "0 auto",
-        padding: "14px 14px",
-        display: "flex",
-        gap: 12,
-        alignItems: "center",
-        justifyContent: "space-between",
-      },
-      brand: {
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "flex-start",
-        lineHeight: 1.1,
-      },
-      brandTitle: { margin: 0, fontSize: 16, fontWeight: 800, color: THEME.primary, letterSpacing: 0.2 },
-      brandSub: { margin: 0, fontSize: 12, color: "rgba(17, 24, 39, 0.65)", fontWeight: 600 },
-
-      tabs: { display: "flex", gap: 8, alignItems: "center" },
-      tabBtn: (active) => ({
-        padding: "10px 12px",
-        borderRadius: 999,
-        border,
-        background: active ? THEME.primary : THEME.surface,
-        color: active ? "#fff" : THEME.primary,
-        fontWeight: 800,
-        fontSize: 13,
-        cursor: "pointer",
-        whiteSpace: "nowrap",
-      }),
-
-      container: { maxWidth: 1100, margin: "0 auto", padding: "16px 14px 28px" },
-      hero: {
-        background: `linear-gradient(135deg, rgba(55, 65, 81, 0.10), rgba(156, 163, 175, 0.12))`,
-        borderRadius: 16,
-        border,
-        padding: 16,
-        boxShadow: subtleShadow,
-      },
-      heroTitle: { margin: 0, fontSize: 20, fontWeight: 900, color: THEME.text },
-      heroDesc: { margin: "8px 0 0", color: "rgba(17, 24, 39, 0.7)", fontWeight: 600, fontSize: 13 },
-
-      grid: {
-        display: "grid",
-        gap: 12,
-        marginTop: 14,
-        gridTemplateColumns: "1fr",
-      },
-      card: {
-        background: THEME.surface,
-        borderRadius: 16,
-        border,
-        padding: 14,
-        boxShadow: shadow,
-        textAlign: "left",
-      },
-      cardTitle: { margin: "0 0 10px", fontSize: 14, fontWeight: 900, color: THEME.primary, letterSpacing: 0.3 },
-
-      label: { display: "block", fontSize: 12, fontWeight: 800, color: "rgba(17, 24, 39, 0.72)", marginBottom: 6 },
-      input: {
-        width: "100%",
-        padding: "12px 12px",
-        borderRadius: 12,
-        border,
-        outline: "none",
-        fontSize: 14,
-        background: THEME.surface,
-        color: THEME.text,
-      },
-      select: {
-        width: "100%",
-        padding: "12px 12px",
-        borderRadius: 12,
-        border,
-        outline: "none",
-        fontSize: 14,
-        background: THEME.surface,
-        color: THEME.text,
-      },
-      textarea: {
-        width: "100%",
-        padding: "12px 12px",
-        borderRadius: 12,
-        border,
-        outline: "none",
-        fontSize: 14,
-        background: THEME.surface,
-        color: THEME.text,
-        minHeight: 88,
-        resize: "vertical",
-      },
-      row2: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 },
-      row3: { display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 },
-      help: { marginTop: 8, fontSize: 12, color: "rgba(17, 24, 39, 0.65)", fontWeight: 600 },
-
-      btnPrimary: { ...btnBase, background: THEME.primary, color: "#fff" },
-      btnSecondary: { ...btnBase, background: THEME.surface, color: THEME.primary },
-      btnSuccess: { ...btnBase, background: THEME.success, color: "#fff", border: `1px solid rgba(5,150,105,0.3)` },
-      btnDanger: { ...btnBase, background: THEME.error, color: "#fff", border: `1px solid rgba(220,38,38,0.3)` },
-
-      pill: (tone) => ({
-        display: "inline-flex",
-        alignItems: "center",
-        gap: 6,
-        padding: "6px 10px",
-        borderRadius: 999,
-        border,
-        background:
-          tone === "success"
-            ? "rgba(5,150,105,0.08)"
-            : tone === "error"
-              ? "rgba(220,38,38,0.08)"
-              : "rgba(55,65,81,0.06)",
-        color: tone === "success" ? THEME.success : tone === "error" ? THEME.error : THEME.primary,
-        fontWeight: 900,
-        fontSize: 12,
-      }),
-
-      mapBox: {
-        height: 180,
-        borderRadius: 14,
-        border,
-        background:
-          "linear-gradient(135deg, rgba(55,65,81,0.08), rgba(156,163,175,0.10))",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        color: "rgba(17, 24, 39, 0.7)",
-        fontWeight: 800,
-        textAlign: "center",
-        padding: 12,
-      },
-
-      small: { fontSize: 12, color: "rgba(17, 24, 39, 0.65)", fontWeight: 600 },
-      divider: { height: 1, background: "rgba(17, 24, 39, 0.08)", margin: "12px 0" },
-      footerNote: {
-        maxWidth: 1100,
-        margin: "0 auto",
-        padding: "0 14px 20px",
-        color: "rgba(17, 24, 39, 0.62)",
-        fontSize: 12,
-        fontWeight: 600,
-      },
-    };
-  }, []);
-
-  // Mobile-first: use CSS media query through inline conditional? We'll keep layout simple:
-  // On wide screens, use 2-column/3-column by checking viewport width (JS only, minimal).
-  const [isWide, setIsWide] = useState(false);
-  useEffect(() => {
-    const update = () => setIsWide(window.innerWidth >= 920);
-    update();
-    window.addEventListener("resize", update);
-    return () => window.removeEventListener("resize", update);
-  }, []);
-
-  const gridStyle = useMemo(() => {
-    if (isWide) return { ...styles.grid, gridTemplateColumns: "1.05fr 0.95fr" };
-    return styles.grid;
-  }, [isWide, styles.grid]);
-
-  const adminGridStyle = useMemo(() => {
-    if (isWide) return { ...styles.grid, gridTemplateColumns: "1fr 1fr 1fr" };
-    return styles.grid;
-  }, [isWide, styles.grid]);
-
-  // ----- Subcomponents (inline for App.js-only change) -----
-
-  const PortalTabs = () => (
-    <div style={styles.tabs} role="tablist" aria-label="Portal navigation">
-      <button
-        type="button"
-        style={styles.tabBtn(activePortal === PORTALS.USER)}
-        onClick={() => setActivePortal(PORTALS.USER)}
-        role="tab"
-        aria-selected={activePortal === PORTALS.USER}
-      >
-        User
-      </button>
-      <button
-        type="button"
-        style={styles.tabBtn(activePortal === PORTALS.MECHANIC)}
-        onClick={() => setActivePortal(PORTALS.MECHANIC)}
-        role="tab"
-        aria-selected={activePortal === PORTALS.MECHANIC}
-      >
-        Mechanic
-      </button>
-      <button
-        type="button"
-        style={styles.tabBtn(activePortal === PORTALS.ADMIN)}
-        onClick={() => setActivePortal(PORTALS.ADMIN)}
-        role="tab"
-        aria-selected={activePortal === PORTALS.ADMIN}
-      >
-        Admin
-      </button>
-    </div>
-  );
+  const PortalTabs = () => {
+    const mkClass = (active) => `tabBtn${active ? " tabBtnActive" : ""}`;
+    return (
+      <nav className="navTabs" role="tablist" aria-label="Portal navigation">
+        <button
+          type="button"
+          className={mkClass(activePortal === PORTALS.USER)}
+          onClick={() => setActivePortal(PORTALS.USER)}
+          role="tab"
+          aria-selected={activePortal === PORTALS.USER}
+        >
+          User
+        </button>
+        <button
+          type="button"
+          className={mkClass(activePortal === PORTALS.MECHANIC)}
+          onClick={() => setActivePortal(PORTALS.MECHANIC)}
+          role="tab"
+          aria-selected={activePortal === PORTALS.MECHANIC}
+        >
+          Mechanic
+        </button>
+        <button
+          type="button"
+          className={mkClass(activePortal === PORTALS.ADMIN)}
+          onClick={() => setActivePortal(PORTALS.ADMIN)}
+          role="tab"
+          aria-selected={activePortal === PORTALS.ADMIN}
+        >
+          Admin
+        </button>
+      </nav>
+    );
+  };
 
   const AuthCard = () => (
-    <section style={styles.card} aria-label="Authentication">
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
-        <h2 style={styles.cardTitle}>Register / Login (stub)</h2>
+    <section className="card" aria-label="Authentication">
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
+        <h2 className="cardTitle">Register / Login (stub)</h2>
         {isAuthedForPortal ? (
-          <span style={styles.pill("success")}>Signed in</span>
+          <span className="pill pillSuccess">Signed in</span>
         ) : (
-          <span style={styles.pill("neutral")}>Signed out</span>
+          <span className="pill">Signed out</span>
         )}
       </div>
 
       {isAuthedForPortal ? (
         <div>
-          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+          <div className="stack" style={{ gap: 6 }}>
             <div style={{ fontWeight: 900, color: THEME.text }}>
-              {authUser.name} <span style={{ color: "rgba(17,24,39,0.6)", fontWeight: 800 }}>({authUser.email})</span>
+              {authUser.name}{" "}
+              <span className="small" style={{ fontWeight: 700 }}>
+                ({authUser.email})
+              </span>
             </div>
-            <div style={styles.small}>
+            <div className="small">
               Role: <strong style={{ color: THEME.primary }}>{authUser.role}</strong>
             </div>
           </div>
-          <div style={{ marginTop: 12, display: "grid", gap: 10 }}>
-            <button type="button" style={styles.btnSecondary} onClick={handleLogout}>
+          <div style={{ marginTop: 16 }} className="stack">
+            <button type="button" className="btn btnSecondary" onClick={handleLogout}>
               Logout
             </button>
           </div>
         </div>
       ) : (
         <form onSubmit={handleAuthSubmit}>
-          <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
+          <div style={{ display: "flex", gap: 8, marginBottom: 12, flexWrap: "wrap" }}>
             <button
               type="button"
-              style={styles.tabBtn(authMode === "login")}
+              className={`tabBtn${authMode === "login" ? " tabBtnActive" : ""}`}
               onClick={() => setAuthMode("login")}
               aria-pressed={authMode === "login"}
             >
@@ -695,7 +497,7 @@ function App() {
             </button>
             <button
               type="button"
-              style={styles.tabBtn(authMode === "register")}
+              className={`tabBtn${authMode === "register" ? " tabBtnActive" : ""}`}
               onClick={() => setAuthMode("register")}
               aria-pressed={authMode === "register"}
             >
@@ -704,58 +506,57 @@ function App() {
           </div>
 
           {authMode === "register" ? (
-            <div style={{ marginBottom: 10 }}>
-              <label style={styles.label} htmlFor="name">
+            <div style={{ marginBottom: 12 }}>
+              <label className="label" htmlFor="name">
                 Full name
               </label>
               <input
                 id="name"
                 value={authForm.name}
                 onChange={(e) => setAuthForm((f) => ({ ...f, name: e.target.value }))}
-                style={styles.input}
+                className="input"
                 placeholder="e.g., Taylor Morgan"
                 autoComplete="name"
               />
             </div>
           ) : null}
 
-          <div style={{ marginBottom: 10 }}>
-            <label style={styles.label} htmlFor="email">
+          <div style={{ marginBottom: 12 }}>
+            <label className="label" htmlFor="email">
               Email
             </label>
             <input
               id="email"
               value={authForm.email}
               onChange={(e) => setAuthForm((f) => ({ ...f, email: e.target.value }))}
-              style={styles.input}
+              className="input"
               placeholder="you@example.com"
               autoComplete="email"
               inputMode="email"
             />
           </div>
 
-          <div style={{ marginBottom: 10 }}>
-            <label style={styles.label} htmlFor="password">
+          <div style={{ marginBottom: 12 }}>
+            <label className="label" htmlFor="password">
               Password
             </label>
             <input
               id="password"
               value={authForm.password}
               onChange={(e) => setAuthForm((f) => ({ ...f, password: e.target.value }))}
-              style={styles.input}
+              className="input"
               placeholder="••••••••"
               autoComplete={authMode === "register" ? "new-password" : "current-password"}
               type="password"
             />
           </div>
 
-          <button type="submit" style={styles.btnPrimary}>
+          <button type="submit" className="btn btnPrimary">
             {authMode === "register" ? "Create account" : "Login"}
           </button>
 
-          <div style={styles.help}>
-            Supabase env (reference only):{" "}
-            <strong>{envInfo.supabaseUrl ? "URL set" : "URL not set"}</strong> ·{" "}
+          <div className="helpText">
+            Supabase env (reference only): <strong>{envInfo.supabaseUrl ? "URL set" : "URL not set"}</strong> ·{" "}
             <strong>{envInfo.supabaseKeyPresent ? "KEY present" : "KEY missing"}</strong>
           </div>
         </form>
@@ -764,14 +565,14 @@ function App() {
   );
 
   const MapPlaceholder = ({ title, subtitle }) => (
-    <div style={{ display: "grid", gap: 8 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", gap: 10, alignItems: "baseline" }}>
+    <div className="stack" style={{ gap: 10 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "baseline" }}>
         <div style={{ fontWeight: 900, color: THEME.primary, fontSize: 13 }}>{title}</div>
-        {subtitle ? <div style={styles.small}>{subtitle}</div> : null}
+        {subtitle ? <div className="small">{subtitle}</div> : null}
       </div>
-      <div style={styles.mapBox} aria-label="Map placeholder">
+      <div className="mapBox" aria-label="Map placeholder">
         Map placeholder
-        <div style={{ marginTop: 8, fontSize: 12, fontWeight: 700, color: "rgba(17,24,39,0.65)" }}>
+        <div style={{ marginTop: 8, fontSize: 12, fontWeight: 700, color: THEME.muted }}>
           Integrate maps + live tracking when services are available.
         </div>
       </div>
@@ -781,25 +582,28 @@ function App() {
   const EstimateCard = () => {
     const est = activeRequest?.estimate;
     if (!activeRequest) return null;
+
     return (
-      <section style={styles.card} aria-label="AI estimate">
-        <h2 style={styles.cardTitle}>AI cost estimate (placeholder)</h2>
-        <div style={{ display: "flex", justifyContent: "space-between", gap: 10, alignItems: "center" }}>
-          <span style={styles.pill("neutral")}>Estimated range</span>
+      <section className="card" aria-label="AI estimate">
+        <h2 className="cardTitle">AI cost estimate (placeholder)</h2>
+        <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center" }}>
+          <span className="pill">Estimated range</span>
           <strong style={{ fontSize: 16, color: THEME.text }}>
             {formatMoney(est.range.low)} – {formatMoney(est.range.high)}
           </strong>
         </div>
-        <div style={styles.divider} />
-        <div style={{ display: "grid", gap: 8 }}>
+        <div className="divider" />
+        <div className="stack" style={{ gap: 10 }}>
           {est.lineItems.map((li) => (
-            <div key={li.label} style={{ display: "flex", justifyContent: "space-between", gap: 10 }}>
-              <div style={{ fontWeight: 800, color: "rgba(17,24,39,0.75)" }}>{li.label}</div>
+            <div key={li.label} style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
+              <div style={{ fontWeight: 700, color: THEME.muted }}>{li.label}</div>
               <div style={{ fontWeight: 900, color: THEME.primary }}>{formatMoney(li.amount)}</div>
             </div>
           ))}
         </div>
-        <div style={{ marginTop: 10, ...styles.small }}>{est.disclaimer}</div>
+        <div style={{ marginTop: 12 }} className="small">
+          {est.disclaimer}
+        </div>
       </section>
     );
   };
@@ -810,40 +614,34 @@ function App() {
 
     const headerLabel = activePortal === PORTALS.MECHANIC ? "Comms with customer (stub)" : "Chat with mechanic (stub)";
     return (
-      <section style={styles.card} aria-label="Chat and communications">
-        <h2 style={styles.cardTitle}>{headerLabel}</h2>
-        <div
-          style={{
-            border: "1px solid rgba(17, 24, 39, 0.10)",
-            borderRadius: 14,
-            padding: 10,
-            background: "rgba(55,65,81,0.03)",
-            maxHeight: 220,
-            overflow: "auto",
-          }}
-        >
+      <section className="card" aria-label="Chat and communications">
+        <h2 className="cardTitle">{headerLabel}</h2>
+
+        <div className="panel" style={{ maxHeight: 220, overflow: "auto" }}>
           {activeRequest.chat.map((m, idx) => (
-            <div key={`${m.at}-${idx}`} style={{ marginBottom: 10 }}>
-              <div style={{ display: "flex", justifyContent: "space-between", gap: 10 }}>
+            <div key={`${m.at}-${idx}`} style={{ marginBottom: 12 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
                 <div style={{ fontWeight: 900, color: THEME.primary, fontSize: 12 }}>
                   {m.from === "user" ? "You" : m.from === "mechanic" ? "Mechanic" : "System"}
                 </div>
-                <div style={{ ...styles.small, fontSize: 11 }}>{new Date(m.at).toLocaleTimeString()}</div>
+                <div className="small" style={{ fontSize: 11 }}>
+                  {new Date(m.at).toLocaleTimeString()}
+                </div>
               </div>
-              <div style={{ fontWeight: 700, color: "rgba(17,24,39,0.85)", fontSize: 13 }}>{m.text}</div>
+              <div style={{ fontWeight: 600, color: THEME.text, fontSize: 13 }}>{m.text}</div>
             </div>
           ))}
         </div>
 
-        <div style={{ display: "grid", gap: 10, marginTop: 10 }}>
-          <label style={styles.label} htmlFor="chatDraft">
+        <div className="stack" style={{ marginTop: 14 }}>
+          <label className="label" htmlFor="chatDraft">
             Message
           </label>
           <input
             id="chatDraft"
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
-            style={styles.input}
+            className="input"
             placeholder="Type a quick update…"
             onKeyDown={(e) => {
               if (e.key === "Enter") {
@@ -855,7 +653,7 @@ function App() {
           />
           <button
             type="button"
-            style={styles.btnPrimary}
+            className="btn btnPrimary"
             onClick={() => {
               sendChatMessage(draft);
               setDraft("");
@@ -870,13 +668,14 @@ function App() {
 
   const PaymentsCard = () => {
     if (!activeRequest) return null;
+
     return (
-      <section style={styles.card} aria-label="Payments">
-        <h2 style={styles.cardTitle}>Payments (CTA)</h2>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10 }}>
+      <section className="card" aria-label="Payments">
+        <h2 className="cardTitle">Payments (CTA)</h2>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
           <div>
             <div style={{ fontWeight: 900, color: THEME.text }}>Payment status</div>
-            <div style={styles.small}>
+            <div className="small">
               {activeRequest.payment.status === "unpaid"
                 ? "No payment initiated."
                 : activeRequest.payment.status === "initiated"
@@ -884,17 +683,16 @@ function App() {
                   : "Paid (stub)."}
             </div>
           </div>
-          <span
-            style={styles.pill(activeRequest.payment.status === "initiated" ? "success" : "neutral")}
-          >
+          <span className={`pill${activeRequest.payment.status === "initiated" ? " pillSuccess" : ""}`}>
             {activeRequest.payment.status}
           </span>
         </div>
-        <div style={{ marginTop: 12, display: "grid", gap: 10 }}>
-          <button type="button" style={styles.btnSuccess} onClick={markPaymentInitiated}>
+
+        <div style={{ marginTop: 16 }} className="stack">
+          <button type="button" className="btn btnSuccess" onClick={markPaymentInitiated}>
             Pay & confirm service (stub)
           </button>
-          <div style={styles.small}>Payment provider integration will be connected later.</div>
+          <div className="small">Payment provider integration will be connected later.</div>
         </div>
       </section>
     );
@@ -910,30 +708,32 @@ function App() {
     const already = activeRequest.review.submitted;
 
     return (
-      <section style={styles.card} aria-label="Post service reviews">
-        <h2 style={styles.cardTitle}>Post-service review</h2>
+      <section className="card" aria-label="Post service reviews">
+        <h2 className="cardTitle">Post-service review</h2>
 
         {!completed ? (
-          <div style={styles.small}>
+          <div className="small">
             Review becomes available after service is marked <strong>Completed</strong>.
           </div>
         ) : already ? (
           <div>
-            <div style={styles.pill("success")}>Review submitted</div>
-            <div style={{ marginTop: 10, fontWeight: 900 }}>
+            <div className="pill pillSuccess">Review submitted</div>
+            <div style={{ marginTop: 12, fontWeight: 900 }}>
               Rating: <span style={{ color: THEME.primary }}>{activeRequest.review.rating}/5</span>
             </div>
-            <div style={{ marginTop: 6, ...styles.small }}>{activeRequest.review.comments || "—"}</div>
+            <div style={{ marginTop: 6 }} className="small">
+              {activeRequest.review.comments || "—"}
+            </div>
           </div>
         ) : (
-          <div style={{ display: "grid", gap: 10 }}>
+          <div className="stack">
             <div>
-              <label style={styles.label} htmlFor="rating">
+              <label className="label" htmlFor="rating">
                 Rating (1–5)
               </label>
               <select
                 id="rating"
-                style={styles.select}
+                className="select"
                 value={rating}
                 onChange={(e) => setRating(Number(e.target.value))}
               >
@@ -947,12 +747,12 @@ function App() {
             </div>
 
             <div>
-              <label style={styles.label} htmlFor="comments">
+              <label className="label" htmlFor="comments">
                 Comments
               </label>
               <textarea
                 id="comments"
-                style={styles.textarea}
+                className="textarea"
                 value={comments}
                 onChange={(e) => setComments(e.target.value)}
                 placeholder="Quick feedback…"
@@ -961,7 +761,7 @@ function App() {
 
             <button
               type="button"
-              style={styles.btnPrimary}
+              className="btn btnPrimary"
               onClick={() => submitReview(rating || 5, comments)}
               disabled={rating === 0}
             >
@@ -975,35 +775,33 @@ function App() {
 
   const UserPortal = () => {
     return (
-      <div>
-        <div style={styles.hero}>
-          <h1 style={styles.heroTitle}>RoadRescue QuickAssist</h1>
-          <p style={styles.heroDesc}>
+      <div className="stack">
+        <div className="hero">
+          <h1 className="heroTitle">RoadRescue QuickAssist</h1>
+          <p className="heroDesc">
             Request roadside help fast. Share your location, vehicle details, get an estimate, track in real time, chat, pay, and leave a review.
           </p>
         </div>
 
-        <div style={gridStyle}>
-          <div style={{ display: "grid", gap: 12 }}>
+        <div className="sectionGrid">
+          <div className="stack">
             <AuthCard />
 
-            <section style={styles.card} aria-label="Request breakdown assistance">
-              <h2 style={styles.cardTitle}>Request breakdown assistance</h2>
+            <section className="card" aria-label="Request breakdown assistance">
+              <h2 className="cardTitle">Request breakdown assistance</h2>
 
               {!isAuthedForPortal ? (
-                <div style={styles.small}>
-                  Login or register to request assistance (stub — no real auth yet).
-                </div>
+                <div className="small">Login or register to request assistance (stub — no real auth yet).</div>
               ) : (
                 <form onSubmit={createAssistanceRequest}>
-                  <div style={styles.row3}>
+                  <div className="formRow3">
                     <div>
-                      <label style={styles.label} htmlFor="year">
+                      <label className="label" htmlFor="year">
                         Vehicle year
                       </label>
                       <input
                         id="year"
-                        style={styles.input}
+                        className="input"
                         inputMode="numeric"
                         placeholder="e.g., 2019"
                         value={requestForm.vehicleYear}
@@ -1011,24 +809,24 @@ function App() {
                       />
                     </div>
                     <div>
-                      <label style={styles.label} htmlFor="make">
+                      <label className="label" htmlFor="make">
                         Make
                       </label>
                       <input
                         id="make"
-                        style={styles.input}
+                        className="input"
                         placeholder="e.g., Ford"
                         value={requestForm.vehicleMake}
                         onChange={(e) => setRequestForm((f) => ({ ...f, vehicleMake: e.target.value }))}
                       />
                     </div>
                     <div>
-                      <label style={styles.label} htmlFor="model">
+                      <label className="label" htmlFor="model">
                         Model
                       </label>
                       <input
                         id="model"
-                        style={styles.input}
+                        className="input"
                         placeholder="e.g., Focus"
                         value={requestForm.vehicleModel}
                         onChange={(e) => setRequestForm((f) => ({ ...f, vehicleModel: e.target.value }))}
@@ -1036,13 +834,13 @@ function App() {
                     </div>
                   </div>
 
-                  <div style={{ marginTop: 10 }}>
-                    <label style={styles.label} htmlFor="issue">
+                  <div style={{ marginTop: 12 }}>
+                    <label className="label" htmlFor="issue">
                       Issue type
                     </label>
                     <select
                       id="issue"
-                      style={styles.select}
+                      className="select"
                       value={requestForm.issueType}
                       onChange={(e) => setRequestForm((f) => ({ ...f, issueType: e.target.value }))}
                     >
@@ -1056,13 +854,13 @@ function App() {
                     </select>
                   </div>
 
-                  <div style={{ marginTop: 10 }}>
-                    <label style={styles.label} htmlFor="phone">
+                  <div style={{ marginTop: 12 }}>
+                    <label className="label" htmlFor="phone">
                       Contact phone
                     </label>
                     <input
                       id="phone"
-                      style={styles.input}
+                      className="input"
                       placeholder="e.g., +1 555 0100"
                       inputMode="tel"
                       value={requestForm.contactPhone}
@@ -1070,25 +868,25 @@ function App() {
                     />
                   </div>
 
-                  <div style={{ marginTop: 10 }}>
-                    <label style={styles.label} htmlFor="notes">
+                  <div style={{ marginTop: 12 }}>
+                    <label className="label" htmlFor="notes">
                       Notes (optional)
                     </label>
                     <textarea
                       id="notes"
-                      style={styles.textarea}
+                      className="textarea"
                       placeholder="Describe what happened…"
                       value={requestForm.notes}
                       onChange={(e) => setRequestForm((f) => ({ ...f, notes: e.target.value }))}
                     />
                   </div>
 
-                  <div style={styles.divider} />
+                  <div className="divider" />
 
-                  <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
+                  <div style={{ display: "flex", gap: 8, marginBottom: 12, flexWrap: "wrap" }}>
                     <button
                       type="button"
-                      style={styles.tabBtn(requestForm.locationMode === "auto")}
+                      className={`tabBtn${requestForm.locationMode === "auto" ? " tabBtnActive" : ""}`}
                       onClick={() => setRequestForm((f) => ({ ...f, locationMode: "auto" }))}
                       aria-pressed={requestForm.locationMode === "auto"}
                     >
@@ -1096,7 +894,7 @@ function App() {
                     </button>
                     <button
                       type="button"
-                      style={styles.tabBtn(requestForm.locationMode === "manual")}
+                      className={`tabBtn${requestForm.locationMode === "manual" ? " tabBtnActive" : ""}`}
                       onClick={() => setRequestForm((f) => ({ ...f, locationMode: "manual" }))}
                       aria-pressed={requestForm.locationMode === "manual"}
                     >
@@ -1105,12 +903,12 @@ function App() {
                   </div>
 
                   {requestForm.locationMode === "auto" ? (
-                    <div style={{ display: "grid", gap: 10 }}>
-                      <button type="button" style={styles.btnSecondary} onClick={requestLiveLocation}>
+                    <div className="stack">
+                      <button type="button" className="btn btnSecondary" onClick={requestLiveLocation}>
                         {locationState.status === "requesting" ? "Getting location…" : "Use my current location"}
                       </button>
 
-                      <div style={styles.small}>
+                      <div className="small">
                         {locationState.status === "granted" && locationState.coords
                           ? `Location: ${locationState.coords.lat}, ${locationState.coords.lng}`
                           : locationState.status === "denied"
@@ -1123,13 +921,13 @@ function App() {
                       </div>
                     </div>
                   ) : (
-                    <div style={{ display: "grid", gap: 8 }}>
-                      <label style={styles.label} htmlFor="address">
+                    <div className="stack" style={{ gap: 10 }}>
+                      <label className="label" htmlFor="address">
                         Address / landmark
                       </label>
                       <input
                         id="address"
-                        style={styles.input}
+                        className="input"
                         placeholder="e.g., 5th Ave near Central Park"
                         value={requestForm.manualAddress}
                         onChange={(e) => setRequestForm((f) => ({ ...f, manualAddress: e.target.value }))}
@@ -1137,11 +935,11 @@ function App() {
                     </div>
                   )}
 
-                  <div style={{ marginTop: 12 }}>
-                    <button type="submit" style={styles.btnPrimary}>
+                  <div style={{ marginTop: 16 }}>
+                    <button type="submit" className="btn btnPrimary">
                       Request help now
                     </button>
-                    <div style={styles.help}>
+                    <div className="helpText">
                       Large action button for emergencies. This will create a mock request in-app only.
                     </div>
                   </div>
@@ -1150,61 +948,63 @@ function App() {
             </section>
           </div>
 
-          <div style={{ display: "grid", gap: 12 }}>
-            <section style={styles.card} aria-label="Real-time tracking">
-              <div style={{ display: "flex", justifyContent: "space-between", gap: 10, alignItems: "center" }}>
-                <h2 style={styles.cardTitle}>Real-time tracking (placeholder)</h2>
+          <div className="stack">
+            <section className="card" aria-label="Real-time tracking">
+              <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center" }}>
+                <h2 className="cardTitle" style={{ marginBottom: 0 }}>
+                  Real-time tracking (placeholder)
+                </h2>
                 {activeRequest ? (
-                  <span style={styles.pill(activeRequest.status === "Completed" ? "success" : "neutral")}>
+                  <span className={`pill${activeRequest.status === "Completed" ? " pillSuccess" : ""}`}>
                     {activeRequest.status}
                   </span>
                 ) : (
-                  <span style={styles.pill("neutral")}>No active request</span>
+                  <span className="pill">No active request</span>
                 )}
               </div>
 
-              {activeRequest ? (
-                <div style={{ display: "grid", gap: 10 }}>
-                  <div style={{ display: "grid", gap: 4 }}>
-                    <div style={{ fontWeight: 900, color: THEME.text }}>{activeRequest.issueType}</div>
-                    <div style={styles.small}>{activeRequest.vehicle}</div>
-                    <div style={styles.small}>
-                      Request ID: <strong>{activeRequest.id}</strong> · Created{" "}
-                      {new Date(activeRequest.createdAt).toLocaleTimeString()}
+              <div style={{ marginTop: 16 }}>
+                {activeRequest ? (
+                  <div className="stack">
+                    <div className="stack" style={{ gap: 4 }}>
+                      <div style={{ fontWeight: 900, color: THEME.text }}>{activeRequest.issueType}</div>
+                      <div className="small">{activeRequest.vehicle}</div>
+                      <div className="small">
+                        Request ID: <strong>{activeRequest.id}</strong> · Created{" "}
+                        {new Date(activeRequest.createdAt).toLocaleTimeString()}
+                      </div>
+                    </div>
+
+                    <MapPlaceholder
+                      title="Map (you + mechanic)"
+                      subtitle={activeRequest.mechanic.assigned ? `ETA ~ ${activeRequest.mechanic.etaMins} min` : "Assigning mechanic…"}
+                    />
+
+                    <div className="stack" style={{ gap: 6 }}>
+                      <div style={{ fontWeight: 900, color: THEME.primary }}>Assigned mechanic</div>
+                      <div className="small">
+                        {activeRequest.mechanic.assigned ? (
+                          <>
+                            <strong>{activeRequest.mechanic.name}</strong> · {activeRequest.mechanic.vehicle}
+                          </>
+                        ) : (
+                          "Pending assignment…"
+                        )}
+                      </div>
+                    </div>
+
+                    <button type="button" className="btn btnSecondary" onClick={advanceTrackingStatus}>
+                      Simulate status update
+                    </button>
+
+                    <div className="small">
+                      This is a UI placeholder. Real-time updates will use WebSocket/push once connected.
                     </div>
                   </div>
-
-                  <MapPlaceholder
-                    title="Map (you + mechanic)"
-                    subtitle={activeRequest.mechanic.assigned ? `ETA ~ ${activeRequest.mechanic.etaMins} min` : "Assigning mechanic…"}
-                  />
-
-                  <div style={{ display: "grid", gap: 8 }}>
-                    <div style={{ fontWeight: 900, color: THEME.primary }}>Assigned mechanic</div>
-                    <div style={styles.small}>
-                      {activeRequest.mechanic.assigned ? (
-                        <>
-                          <strong>{activeRequest.mechanic.name}</strong> · {activeRequest.mechanic.vehicle}
-                        </>
-                      ) : (
-                        "Pending assignment…"
-                      )}
-                    </div>
-                  </div>
-
-                  <button type="button" style={styles.btnSecondary} onClick={advanceTrackingStatus}>
-                    Simulate status update
-                  </button>
-
-                  <div style={{ ...styles.small, marginTop: 2 }}>
-                    This is a UI placeholder. Real-time updates will use WebSocket/push once connected.
-                  </div>
-                </div>
-              ) : (
-                <div style={styles.small}>
-                  Submit a request to see tracking, map placeholder, and status indicators.
-                </div>
-              )}
+                ) : (
+                  <div className="small">Submit a request to see tracking, map placeholder, and status indicators.</div>
+                )}
+              </div>
             </section>
 
             <EstimateCard />
@@ -1219,53 +1019,53 @@ function App() {
 
   const MechanicPortal = () => {
     return (
-      <div>
-        <div style={styles.hero}>
-          <h1 style={styles.heroTitle}>Mechanic Portal</h1>
-          <p style={styles.heroDesc}>
+      <div className="stack">
+        <div className="hero">
+          <h1 className="heroTitle">Mechanic Portal</h1>
+          <p className="heroDesc">
             Manage assigned jobs, update statuses, verify service handoff, and communicate with customers (all stubs for now).
           </p>
         </div>
 
-        <div style={gridStyle}>
-          <div style={{ display: "grid", gap: 12 }}>
+        <div className="sectionGrid">
+          <div className="stack">
             <AuthCard />
 
-            <section style={styles.card} aria-label="Job management">
-              <h2 style={styles.cardTitle}>Job management</h2>
+            <section className="card" aria-label="Job management">
+              <h2 className="cardTitle">Job management</h2>
 
               {!isAuthedForPortal ? (
-                <div style={styles.small}>Login to view jobs (stub).</div>
+                <div className="small">Login to view jobs (stub).</div>
               ) : (
-                <div style={{ display: "grid", gap: 12 }}>
+                <div className="stack">
                   {mechanicJobs.map((job) => (
                     <MechanicJobCard
                       key={job.id}
                       job={job}
                       onUpdateStatus={mechanicUpdateJobStatus}
                       onVerify={mechanicVerifyJob}
-                      styles={styles}
                     />
                   ))}
-                  <div style={styles.small}>
-                    Tip: Status updates here also nudge the user tracking panel (demo behavior).
-                  </div>
+                  <div className="small">Tip: Status updates here also nudge the user tracking panel (demo behavior).</div>
                 </div>
               )}
             </section>
           </div>
 
-          <div style={{ display: "grid", gap: 12 }}>
-            <section style={styles.card} aria-label="Navigation and map">
-              <h2 style={styles.cardTitle}>Navigation / map (placeholder)</h2>
+          <div className="stack">
+            <section className="card" aria-label="Navigation and map">
+              <h2 className="cardTitle">Navigation / map (placeholder)</h2>
               <MapPlaceholder title="Route to customer" subtitle="Turn-by-turn navigation will be integrated later." />
-              <div style={{ marginTop: 10, display: "grid", gap: 10 }}>
-                <button type="button" style={styles.btnPrimary} onClick={() => sendChatMessage("ETA update: I'm 10 minutes away.")} disabled={!activeRequest}>
+              <div style={{ marginTop: 16 }} className="stack">
+                <button
+                  type="button"
+                  className="btn btnPrimary"
+                  onClick={() => sendChatMessage("ETA update: I'm 10 minutes away.")}
+                  disabled={!activeRequest}
+                >
                   Send quick ETA update to customer (stub)
                 </button>
-                <div style={styles.small}>
-                  Chat button activates once there is an active request in the app session.
-                </div>
+                <div className="small">Chat button activates once there is an active request in the app session.</div>
               </div>
             </section>
 
@@ -1278,43 +1078,44 @@ function App() {
 
   const AdminPortal = () => {
     return (
-      <div>
-        <div style={styles.hero}>
-          <h1 style={styles.heroTitle}>Admin Dashboard</h1>
-          <p style={styles.heroDesc}>
+      <div className="stack">
+        <div className="hero">
+          <h1 className="heroTitle">Admin Dashboard</h1>
+          <p className="heroDesc">
             Monitor platform activity, view simple analytics, and track operational health (mock data).
           </p>
         </div>
 
-        <div style={{ ...styles.container, paddingTop: 14 }}>
-          <div style={{ marginTop: 12, display: "grid", gap: 12 }}>
-            <section style={styles.card} aria-label="Admin controls">
-              <div style={{ display: "flex", justifyContent: "space-between", gap: 10, alignItems: "center" }}>
-                <h2 style={styles.cardTitle}>Live monitoring (stub)</h2>
-                <span style={styles.pill("neutral")}>Updated {new Date(adminMetrics.lastUpdatedAt).toLocaleTimeString()}</span>
+        <div className="container">
+          <div className="stack">
+            <section className="card" aria-label="Admin controls">
+              <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center" }}>
+                <h2 className="cardTitle" style={{ marginBottom: 0 }}>
+                  Live monitoring (stub)
+                </h2>
+                <span className="pill">Updated {new Date(adminMetrics.lastUpdatedAt).toLocaleTimeString()}</span>
               </div>
-              <div style={{ display: "grid", gap: 10 }}>
-                <button type="button" style={styles.btnPrimary} onClick={refreshAdminMetrics}>
+
+              <div style={{ marginTop: 16 }} className="stack">
+                <button type="button" className="btn btnPrimary" onClick={refreshAdminMetrics}>
                   Refresh metrics
                 </button>
-                <div style={styles.small}>
-                  No backend is connected. This simulates live data for layout and interaction testing.
-                </div>
+                <div className="small">No backend is connected. This simulates live data for layout and interaction testing.</div>
               </div>
             </section>
 
-            <div style={adminGridStyle}>
-              <MetricCard label="Active requests" value={String(adminMetrics.activeRequests)} tone="neutral" styles={styles} />
-              <MetricCard label="Active mechanics" value={String(adminMetrics.activeMechanics)} tone="neutral" styles={styles} />
-              <MetricCard label="Avg ETA" value={`${adminMetrics.avgEtaMins} min`} tone="neutral" styles={styles} />
-              <MetricCard label="Completed today" value={String(adminMetrics.completedToday)} tone="success" styles={styles} />
-              <MetricCard label="Revenue today" value={formatMoney(adminMetrics.revenueToday)} tone="success" styles={styles} />
-              <MetricCard label="Satisfaction" value={`${adminMetrics.satisfaction}/5`} tone="success" styles={styles} />
-              <MetricCard label="Incidents" value={String(adminMetrics.incidents)} tone={adminMetrics.incidents > 0 ? "error" : "success"} styles={styles} />
+            <div className="grid3">
+              <MetricCard label="Active requests" value={String(adminMetrics.activeRequests)} tone="neutral" />
+              <MetricCard label="Active mechanics" value={String(adminMetrics.activeMechanics)} tone="neutral" />
+              <MetricCard label="Avg ETA" value={`${adminMetrics.avgEtaMins} min`} tone="neutral" />
+              <MetricCard label="Completed today" value={String(adminMetrics.completedToday)} tone="success" />
+              <MetricCard label="Revenue today" value={formatMoney(adminMetrics.revenueToday)} tone="success" />
+              <MetricCard label="Satisfaction" value={`${adminMetrics.satisfaction}/5`} tone="success" />
+              <MetricCard label="Incidents" value={String(adminMetrics.incidents)} tone={adminMetrics.incidents > 0 ? "error" : "success"} />
             </div>
 
-            <section style={styles.card} aria-label="Admin map placeholder">
-              <h2 style={styles.cardTitle}>Operations map (placeholder)</h2>
+            <section className="card" aria-label="Admin map placeholder">
+              <h2 className="cardTitle">Operations map (placeholder)</h2>
               <MapPlaceholder title="Active requests + mechanics" subtitle="Cluster view / heatmap placeholder." />
             </section>
           </div>
@@ -1324,85 +1125,85 @@ function App() {
   };
 
   return (
-    <div style={styles.page}>
-      <header style={styles.topBar}>
-        <div style={styles.topBarInner}>
-          <div style={styles.brand}>
-            <p style={styles.brandTitle}>RoadRescue QuickAssist</p>
-            <p style={styles.brandSub}>Emergency roadside assistance — multi-portal UI scaffold</p>
+    <div className="appShell">
+      <header className="navbar">
+        <div className="navbarInner">
+          <div className="brand">
+            <p className="brandTitle">RoadRescue QuickAssist</p>
+            <p className="brandSub">Emergency roadside assistance — multi-portal UI scaffold</p>
           </div>
           <PortalTabs />
         </div>
       </header>
 
-      <main style={styles.container}>
+      <main className="container">
         {activePortal === PORTALS.USER ? <UserPortal /> : null}
         {activePortal === PORTALS.MECHANIC ? <MechanicPortal /> : null}
         {activePortal === PORTALS.ADMIN ? <AdminPortal /> : null}
       </main>
 
-      <footer style={styles.footerNote}>
+      <footer className="footerNote">
         UI stubs only: maps, real-time tracking, chat, payments, and auth are placeholders until services/APIs are connected.
       </footer>
     </div>
   );
 }
 
-function MetricCard({ label, value, tone, styles }) {
+// PUBLIC_INTERFACE
+function MetricCard({ label, value, tone }) {
+  const pillClass =
+    tone === "success" ? "pill pillSuccess" : tone === "error" ? "pill pillError" : tone === "warning" ? "pill pillWarn" : "pill";
+
   return (
-    <section style={styles.card} aria-label={label}>
-      <h2 style={styles.cardTitle}>{label}</h2>
-      <div style={{ display: "flex", justifyContent: "space-between", gap: 10, alignItems: "baseline" }}>
+    <section className="card" aria-label={label}>
+      <h2 className="cardTitle">{label}</h2>
+      <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "baseline" }}>
         <div style={{ fontSize: 22, fontWeight: 950, color: THEME.text }}>{value}</div>
-        <span style={styles.pill(tone)}>{tone}</span>
+        <span className={pillClass}>{tone}</span>
       </div>
-      <div style={{ marginTop: 8, ...styles.small }}>Analytics placeholder</div>
+      <div style={{ marginTop: 10 }} className="small">
+        Analytics placeholder
+      </div>
     </section>
   );
 }
 
-function MechanicJobCard({ job, onUpdateStatus, onVerify, styles }) {
+// PUBLIC_INTERFACE
+function MechanicJobCard({ job, onUpdateStatus, onVerify }) {
   const [codeAttempt, setCodeAttempt] = useState("");
 
   return (
-    <div
-      style={{
-        border: "1px solid rgba(17, 24, 39, 0.10)",
-        borderRadius: 16,
-        padding: 12,
-        background: "rgba(55,65,81,0.03)",
-      }}
-    >
-      <div style={{ display: "flex", justifyContent: "space-between", gap: 10, alignItems: "center" }}>
+    <div className="panel">
+      <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center" }}>
         <div>
           <div style={{ fontWeight: 950, color: THEME.text }}>{job.id}</div>
-          <div style={styles.small}>
+          <div className="small">
             {job.customerName} · {job.vehicle}
           </div>
         </div>
-        <span style={styles.pill(job.status === "Completed" ? "success" : "neutral")}>{job.status}</span>
+        <span className={`pill${job.status === "Completed" ? " pillSuccess" : ""}`}>{job.status}</span>
       </div>
 
-      <div style={{ marginTop: 10, display: "grid", gap: 6 }}>
+      <div style={{ marginTop: 14 }} className="stack" aria-label={`${job.id} details`}>
         <div style={{ fontWeight: 900, color: THEME.primary, fontSize: 13 }}>{job.issueType}</div>
-        <div style={styles.small}>
+        <div className="small">
           Location: <strong>{job.location}</strong>
         </div>
-        <div style={styles.small}>
+        <div className="small">
           ETA: <strong>{job.etaMins} min</strong> · Updated {new Date(job.updatedAt).toLocaleTimeString()}
         </div>
       </div>
 
-      <div style={styles.divider} />
+      <div className="divider" />
 
-      <div style={{ display: "grid", gap: 10 }}>
+      <div className="stack">
         <div>
-          <label style={styles.label} htmlFor={`status-${job.id}`}>
+          <label className="label" htmlFor={`status-${job.id}`}>
             Update status
           </label>
           <select
             id={`status-${job.id}`}
-            style={styles.select}
+            className="select"
             value={job.status}
             onChange={(e) => onUpdateStatus(job.id, e.target.value)}
           >
@@ -1414,44 +1215,33 @@ function MechanicJobCard({ job, onUpdateStatus, onVerify, styles }) {
           </select>
         </div>
 
-        <div
-          style={{
-            border: "1px solid rgba(17,24,39,0.10)",
-            borderRadius: 14,
-            padding: 10,
-            background: "#fff",
-          }}
-        >
-          <div style={{ display: "flex", justifyContent: "space-between", gap: 10, alignItems: "center" }}>
+        <div className="card" style={{ padding: 16, boxShadow: "none" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center" }}>
             <div style={{ fontWeight: 950, color: THEME.primary }}>Verification</div>
-            <span style={styles.pill(job.verification.verified ? "success" : "neutral")}>
+            <span className={`pill${job.verification.verified ? " pillSuccess" : ""}`}>
               {job.verification.verified ? "verified" : "pending"}
             </span>
           </div>
 
-          <div style={{ marginTop: 6, ...styles.small }}>
+          <div style={{ marginTop: 8 }} className="small">
             {job.verification.required
               ? "Ask the customer for their verification code before completing service."
               : "Verification not required."}
           </div>
 
-          <div style={{ marginTop: 10, display: "grid", gap: 10 }}>
-            <label style={styles.label} htmlFor={`code-${job.id}`}>
+          <div style={{ marginTop: 14 }} className="stack">
+            <label className="label" htmlFor={`code-${job.id}`}>
               Enter code (demo code: {job.verification.code})
             </label>
             <input
               id={`code-${job.id}`}
-              style={styles.input}
+              className="input"
               value={codeAttempt}
               onChange={(e) => setCodeAttempt(e.target.value)}
               inputMode="numeric"
               placeholder="e.g., 482913"
             />
-            <button
-              type="button"
-              style={styles.btnSecondary}
-              onClick={() => onVerify(job.id, codeAttempt)}
-            >
+            <button type="button" className="btn btnSecondary" onClick={() => onVerify(job.id, codeAttempt)}>
               Verify
             </button>
           </div>
