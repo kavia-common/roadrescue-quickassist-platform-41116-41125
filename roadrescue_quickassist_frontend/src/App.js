@@ -1,8 +1,17 @@
 import React, { useEffect, useMemo, useState } from "react";
 import "./theme.css";
+import {
+  AppShell,
+  Card,
+  NavPillButton,
+  SectionTitle,
+  SidebarGroup,
+  StatusPill,
+  usePortalLabel,
+} from "./components/AppShell";
 
 /**
- * RoadRescue QuickAssist — React Frontend (single-file UI scaffold)
+ * RoadRescue QuickAssist — React Frontend (UI scaffold)
  * - No backend calls are made; all data is mocked/stubbed.
  * - Environment variables are referenced only for display/diagnostics:
  *   REACT_APP_SUPABASE_URL / REACT_APP_SUPABASE_KEY.
@@ -27,15 +36,7 @@ const PORTALS = {
   ADMIN: "admin",
 };
 
-const ASSISTANCE_STATUSES = [
-  "Draft",
-  "Requested",
-  "Dispatched",
-  "En Route",
-  "Arrived",
-  "In Service",
-  "Completed",
-];
+const ASSISTANCE_STATUSES = ["Draft", "Requested", "Dispatched", "En Route", "Arrived", "In Service", "Completed"];
 
 function clamp(n, min, max) {
   return Math.min(max, Math.max(min, n));
@@ -73,6 +74,10 @@ function App() {
   }, []);
 
   const [activePortal, setActivePortal] = useState(PORTALS.USER);
+  const portalLabel = usePortalLabel(activePortal);
+
+  // Mobile-only sidebar drawer state
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // Auth stub (no real persistence)
   const [authMode, setAuthMode] = useState("login"); // login | register
@@ -225,8 +230,7 @@ function App() {
     const high = clamp(base + 35, 60, 1299);
 
     return {
-      disclaimer:
-        "AI estimate placeholder — final pricing depends on distance, parts, and on-site assessment.",
+      disclaimer: "AI estimate placeholder — final pricing depends on distance, parts, and on-site assessment.",
       range: { low, high },
       lineItems: [
         { label: "Dispatch + arrival", amount: clamp(base * 0.55, 25, 500) },
@@ -377,7 +381,11 @@ function App() {
     setActiveRequest((prev) => {
       if (!prev) return prev;
       // We don't have a real linkage; just update if user has an active request and mechanic portal is interacting.
-      return { ...prev, status: newStatus, timeline: [...prev.timeline, { at: nowIso(), status: newStatus, note: "Mechanic updated status (simulated)." }] };
+      return {
+        ...prev,
+        status: newStatus,
+        timeline: [...prev.timeline, { at: nowIso(), status: newStatus, note: "Mechanic updated status (simulated)." }],
+      };
     });
   };
 
@@ -419,77 +427,92 @@ function App() {
 
   const isAuthedForPortal = authUser && authUser.role === activePortal;
 
-  const PortalTabs = () => {
-    const mkClass = (active) => `tabBtn${active ? " tabBtnActive" : ""}`;
-    return (
-      <nav className="navTabs" role="tablist" aria-label="Portal navigation">
-        <button
-          type="button"
-          className={mkClass(activePortal === PORTALS.USER)}
-          onClick={() => setActivePortal(PORTALS.USER)}
-          role="tab"
-          aria-selected={activePortal === PORTALS.USER}
+  const portalTone = activePortal === PORTALS.ADMIN ? "warning" : activePortal === PORTALS.MECHANIC ? "success" : "neutral";
+
+  const Sidebar = () => (
+    <div className="rrSidebarStack">
+      <SidebarGroup title="Portals">
+        <NavPillButton
+          active={activePortal === PORTALS.USER}
+          onClick={() => {
+            setActivePortal(PORTALS.USER);
+            setMobileMenuOpen(false);
+          }}
+          ariaLabel="Switch to User portal"
         >
           User
-        </button>
-        <button
-          type="button"
-          className={mkClass(activePortal === PORTALS.MECHANIC)}
-          onClick={() => setActivePortal(PORTALS.MECHANIC)}
-          role="tab"
-          aria-selected={activePortal === PORTALS.MECHANIC}
+        </NavPillButton>
+        <NavPillButton
+          active={activePortal === PORTALS.MECHANIC}
+          onClick={() => {
+            setActivePortal(PORTALS.MECHANIC);
+            setMobileMenuOpen(false);
+          }}
+          ariaLabel="Switch to Mechanic portal"
         >
           Mechanic
-        </button>
-        <button
-          type="button"
-          className={mkClass(activePortal === PORTALS.ADMIN)}
-          onClick={() => setActivePortal(PORTALS.ADMIN)}
-          role="tab"
-          aria-selected={activePortal === PORTALS.ADMIN}
+        </NavPillButton>
+        <NavPillButton
+          active={activePortal === PORTALS.ADMIN}
+          onClick={() => {
+            setActivePortal(PORTALS.ADMIN);
+            setMobileMenuOpen(false);
+          }}
+          ariaLabel="Switch to Admin portal"
         >
           Admin
-        </button>
-      </nav>
-    );
-  };
+        </NavPillButton>
+      </SidebarGroup>
+
+      <div className="rrDivider" />
+
+      <SidebarGroup title="Session">
+        <div className="rrRowBetween rrGap2">
+          <div className="rrSmall">Active portal</div>
+          <StatusPill tone={portalTone}>{portalLabel}</StatusPill>
+        </div>
+
+        <div className="rrRowBetween rrGap2" style={{ marginTop: 8 }}>
+          <div className="rrSmall">Auth</div>
+          <StatusPill tone={isAuthedForPortal ? "success" : "neutral"}>{isAuthedForPortal ? "Signed in" : "Signed out"}</StatusPill>
+        </div>
+
+        <div className="rrTiny" style={{ marginTop: 10 }}>
+          Supabase env (reference only): <strong>{envInfo.supabaseUrl ? "URL set" : "URL not set"}</strong> ·{" "}
+          <strong>{envInfo.supabaseKeyPresent ? "KEY present" : "KEY missing"}</strong>
+        </div>
+      </SidebarGroup>
+    </div>
+  );
 
   const AuthCard = () => (
-    <section className="card" aria-label="Authentication">
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
-        <h2 className="cardTitle">Register / Login (stub)</h2>
-        {isAuthedForPortal ? (
-          <span className="pill pillSuccess">Signed in</span>
-        ) : (
-          <span className="pill">Signed out</span>
-        )}
-      </div>
-
+    <Card
+      title="Authentication (stub)"
+      right={isAuthedForPortal ? <StatusPill tone="success">Signed in</StatusPill> : <StatusPill tone="neutral">Signed out</StatusPill>}
+    >
       {isAuthedForPortal ? (
-        <div>
-          <div className="stack" style={{ gap: 6 }}>
+        <div className="rrStack" style={{ gap: 12 }}>
+          <div className="rrStack" style={{ gap: 6 }}>
             <div style={{ fontWeight: 900, color: THEME.text }}>
               {authUser.name}{" "}
-              <span className="small" style={{ fontWeight: 700 }}>
+              <span className="rrSmall" style={{ fontWeight: 700 }}>
                 ({authUser.email})
               </span>
             </div>
-            <div className="small">
+            <div className="rrSmall">
               Role: <strong style={{ color: THEME.primary }}>{authUser.role}</strong>
             </div>
           </div>
-          <div style={{ marginTop: 16 }} className="stack">
-            <button type="button" className="btn btnSecondary" onClick={handleLogout}>
-              Logout
-            </button>
-          </div>
+          <button type="button" className="btn btnSecondary" onClick={handleLogout}>
+            Logout
+          </button>
         </div>
       ) : (
-        <form onSubmit={handleAuthSubmit}>
-          <div style={{ display: "flex", gap: 8, marginBottom: 12, flexWrap: "wrap" }}>
+        <form onSubmit={handleAuthSubmit} className="rrStack" style={{ gap: 12 }}>
+          <div className="rrSegment">
             <button
               type="button"
-              className={`tabBtn${authMode === "login" ? " tabBtnActive" : ""}`}
+              className={`rrSegmentBtn${authMode === "login" ? " rrSegmentBtnActive" : ""}`}
               onClick={() => setAuthMode("login")}
               aria-pressed={authMode === "login"}
             >
@@ -497,7 +520,7 @@ function App() {
             </button>
             <button
               type="button"
-              className={`tabBtn${authMode === "register" ? " tabBtnActive" : ""}`}
+              className={`rrSegmentBtn${authMode === "register" ? " rrSegmentBtnActive" : ""}`}
               onClick={() => setAuthMode("register")}
               aria-pressed={authMode === "register"}
             >
@@ -506,7 +529,7 @@ function App() {
           </div>
 
           {authMode === "register" ? (
-            <div style={{ marginBottom: 12 }}>
+            <div>
               <label className="label" htmlFor="name">
                 Full name
               </label>
@@ -521,7 +544,7 @@ function App() {
             </div>
           ) : null}
 
-          <div style={{ marginBottom: 12 }}>
+          <div>
             <label className="label" htmlFor="email">
               Email
             </label>
@@ -536,7 +559,7 @@ function App() {
             />
           </div>
 
-          <div style={{ marginBottom: 12 }}>
+          <div>
             <label className="label" htmlFor="password">
               Password
             </label>
@@ -554,21 +577,18 @@ function App() {
           <button type="submit" className="btn btnPrimary">
             {authMode === "register" ? "Create account" : "Login"}
           </button>
-
-          <div className="helpText">
-            Supabase env (reference only): <strong>{envInfo.supabaseUrl ? "URL set" : "URL not set"}</strong> ·{" "}
-            <strong>{envInfo.supabaseKeyPresent ? "KEY present" : "KEY missing"}</strong>
-          </div>
         </form>
       )}
-    </section>
+    </Card>
   );
 
   const MapPlaceholder = ({ title, subtitle }) => (
-    <div className="stack" style={{ gap: 10 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "baseline" }}>
-        <div style={{ fontWeight: 900, color: THEME.primary, fontSize: 13 }}>{title}</div>
-        {subtitle ? <div className="small">{subtitle}</div> : null}
+    <div className="rrStack" style={{ gap: 10 }}>
+      <div className="rrRowBetween rrGap2" style={{ alignItems: "baseline" }}>
+        <div className="rrSmall" style={{ fontWeight: 900, color: THEME.primary }}>
+          {title}
+        </div>
+        {subtitle ? <div className="rrSmall">{subtitle}</div> : null}
       </div>
       <div className="mapBox" aria-label="Map placeholder">
         Map placeholder
@@ -584,27 +604,33 @@ function App() {
     if (!activeRequest) return null;
 
     return (
-      <section className="card" aria-label="AI estimate">
-        <h2 className="cardTitle">AI cost estimate (placeholder)</h2>
-        <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center" }}>
-          <span className="pill">Estimated range</span>
+      <Card
+        title="AI cost estimate (placeholder)"
+        right={<StatusPill tone="neutral">Estimated range</StatusPill>}
+        subtitle={`Generated ${new Date(est.generatedAt).toLocaleTimeString()}`}
+      >
+        <div className="rrRowBetween rrGap2" style={{ alignItems: "center" }}>
+          <div className="rrSmall">Range</div>
           <strong style={{ fontSize: 16, color: THEME.text }}>
             {formatMoney(est.range.low)} – {formatMoney(est.range.high)}
           </strong>
         </div>
-        <div className="divider" />
-        <div className="stack" style={{ gap: 10 }}>
+
+        <div className="rrDivider" />
+
+        <div className="rrStack" style={{ gap: 10 }}>
           {est.lineItems.map((li) => (
-            <div key={li.label} style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
+            <div key={li.label} className="rrRowBetween rrGap2">
               <div style={{ fontWeight: 700, color: THEME.muted }}>{li.label}</div>
               <div style={{ fontWeight: 900, color: THEME.primary }}>{formatMoney(li.amount)}</div>
             </div>
           ))}
         </div>
-        <div style={{ marginTop: 12 }} className="small">
+
+        <div style={{ marginTop: 12 }} className="rrSmall">
           {est.disclaimer}
         </div>
-      </section>
+      </Card>
     );
   };
 
@@ -614,17 +640,15 @@ function App() {
 
     const headerLabel = activePortal === PORTALS.MECHANIC ? "Comms with customer (stub)" : "Chat with mechanic (stub)";
     return (
-      <section className="card" aria-label="Chat and communications">
-        <h2 className="cardTitle">{headerLabel}</h2>
-
-        <div className="panel" style={{ maxHeight: 220, overflow: "auto" }}>
+      <Card title={headerLabel} subtitle="Messages are stored only in memory for this session">
+        <div className="panel" style={{ maxHeight: 240, overflow: "auto" }}>
           {activeRequest.chat.map((m, idx) => (
             <div key={`${m.at}-${idx}`} style={{ marginBottom: 12 }}>
-              <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
+              <div className="rrRowBetween rrGap2">
                 <div style={{ fontWeight: 900, color: THEME.primary, fontSize: 12 }}>
                   {m.from === "user" ? "You" : m.from === "mechanic" ? "Mechanic" : "System"}
                 </div>
-                <div className="small" style={{ fontSize: 11 }}>
+                <div className="rrSmall" style={{ fontSize: 11 }}>
                   {new Date(m.at).toLocaleTimeString()}
                 </div>
               </div>
@@ -633,7 +657,7 @@ function App() {
           ))}
         </div>
 
-        <div className="stack" style={{ marginTop: 14 }}>
+        <div className="rrStack" style={{ marginTop: 14, gap: 10 }}>
           <label className="label" htmlFor="chatDraft">
             Message
           </label>
@@ -662,7 +686,7 @@ function App() {
             Send message
           </button>
         </div>
-      </section>
+      </Card>
     );
   };
 
@@ -670,12 +694,14 @@ function App() {
     if (!activeRequest) return null;
 
     return (
-      <section className="card" aria-label="Payments">
-        <h2 className="cardTitle">Payments (CTA)</h2>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
+      <Card
+        title="Payments (CTA)"
+        right={<StatusPill tone={activeRequest.payment.status === "initiated" ? "success" : "neutral"}>{activeRequest.payment.status}</StatusPill>}
+      >
+        <div className="rrRowBetween rrGap2" style={{ alignItems: "center" }}>
           <div>
             <div style={{ fontWeight: 900, color: THEME.text }}>Payment status</div>
-            <div className="small">
+            <div className="rrSmall">
               {activeRequest.payment.status === "unpaid"
                 ? "No payment initiated."
                 : activeRequest.payment.status === "initiated"
@@ -683,18 +709,15 @@ function App() {
                   : "Paid (stub)."}
             </div>
           </div>
-          <span className={`pill${activeRequest.payment.status === "initiated" ? " pillSuccess" : ""}`}>
-            {activeRequest.payment.status}
-          </span>
         </div>
 
-        <div style={{ marginTop: 16 }} className="stack">
+        <div style={{ marginTop: 16 }} className="rrStack">
           <button type="button" className="btn btnSuccess" onClick={markPaymentInitiated}>
             Pay & confirm service (stub)
           </button>
-          <div className="small">Payment provider integration will be connected later.</div>
+          <div className="rrSmall">Payment provider integration will be connected later.</div>
         </div>
-      </section>
+      </Card>
     );
   };
 
@@ -708,35 +731,26 @@ function App() {
     const already = activeRequest.review.submitted;
 
     return (
-      <section className="card" aria-label="Post service reviews">
-        <h2 className="cardTitle">Post-service review</h2>
-
+      <Card title="Post-service review" subtitle="Shown after service is completed">
         {!completed ? (
-          <div className="small">
+          <div className="rrSmall">
             Review becomes available after service is marked <strong>Completed</strong>.
           </div>
         ) : already ? (
-          <div>
-            <div className="pill pillSuccess">Review submitted</div>
-            <div style={{ marginTop: 12, fontWeight: 900 }}>
+          <div className="rrStack" style={{ gap: 8 }}>
+            <StatusPill tone="success">Review submitted</StatusPill>
+            <div style={{ marginTop: 6, fontWeight: 900 }}>
               Rating: <span style={{ color: THEME.primary }}>{activeRequest.review.rating}/5</span>
             </div>
-            <div style={{ marginTop: 6 }} className="small">
-              {activeRequest.review.comments || "—"}
-            </div>
+            <div className="rrSmall">{activeRequest.review.comments || "—"}</div>
           </div>
         ) : (
-          <div className="stack">
+          <div className="rrStack" style={{ gap: 12 }}>
             <div>
               <label className="label" htmlFor="rating">
                 Rating (1–5)
               </label>
-              <select
-                id="rating"
-                className="select"
-                value={rating}
-                onChange={(e) => setRating(Number(e.target.value))}
-              >
+              <select id="rating" className="select" value={rating} onChange={(e) => setRating(Number(e.target.value))}>
                 <option value={0}>Select…</option>
                 <option value={1}>1 - Poor</option>
                 <option value={2}>2 - Fair</option>
@@ -759,41 +773,34 @@ function App() {
               />
             </div>
 
-            <button
-              type="button"
-              className="btn btnPrimary"
-              onClick={() => submitReview(rating || 5, comments)}
-              disabled={rating === 0}
-            >
+            <button type="button" className="btn btnPrimary" onClick={() => submitReview(rating || 5, comments)} disabled={rating === 0}>
               Submit review
             </button>
           </div>
         )}
-      </section>
+      </Card>
     );
   };
 
   const UserPortal = () => {
     return (
-      <div className="stack">
-        <div className="hero">
-          <h1 className="heroTitle">RoadRescue QuickAssist</h1>
-          <p className="heroDesc">
-            Request roadside help fast. Share your location, vehicle details, get an estimate, track in real time, chat, pay, and leave a review.
-          </p>
-        </div>
+      <div className="rrStack">
+        <SectionTitle
+          eyebrow="User Portal"
+          title="Request roadside assistance"
+          description="Share your location, vehicle details, get an estimate, track in real time, chat, pay, and leave a review (all demo stubs)."
+          right={<StatusPill tone={activeRequest ? "neutral" : "warning"}>{activeRequest ? "Active request" : "No request"}</StatusPill>}
+        />
 
-        <div className="sectionGrid">
-          <div className="stack">
+        <div className="rrGrid2">
+          <div className="rrStack">
             <AuthCard />
 
-            <section className="card" aria-label="Request breakdown assistance">
-              <h2 className="cardTitle">Request breakdown assistance</h2>
-
+            <Card title="Request breakdown assistance" subtitle="Creates an in-memory request only (no backend yet)">
               {!isAuthedForPortal ? (
-                <div className="small">Login or register to request assistance (stub — no real auth yet).</div>
+                <div className="rrSmall">Login or register to request assistance (stub — no real auth yet).</div>
               ) : (
-                <form onSubmit={createAssistanceRequest}>
+                <form onSubmit={createAssistanceRequest} className="rrStack" style={{ gap: 12 }}>
                   <div className="formRow3">
                     <div>
                       <label className="label" htmlFor="year">
@@ -834,7 +841,7 @@ function App() {
                     </div>
                   </div>
 
-                  <div style={{ marginTop: 12 }}>
+                  <div>
                     <label className="label" htmlFor="issue">
                       Issue type
                     </label>
@@ -854,7 +861,7 @@ function App() {
                     </select>
                   </div>
 
-                  <div style={{ marginTop: 12 }}>
+                  <div>
                     <label className="label" htmlFor="phone">
                       Contact phone
                     </label>
@@ -868,7 +875,7 @@ function App() {
                     />
                   </div>
 
-                  <div style={{ marginTop: 12 }}>
+                  <div>
                     <label className="label" htmlFor="notes">
                       Notes (optional)
                     </label>
@@ -881,12 +888,12 @@ function App() {
                     />
                   </div>
 
-                  <div className="divider" />
+                  <div className="rrDivider" />
 
-                  <div style={{ display: "flex", gap: 8, marginBottom: 12, flexWrap: "wrap" }}>
+                  <div className="rrSegment" aria-label="Location input mode">
                     <button
                       type="button"
-                      className={`tabBtn${requestForm.locationMode === "auto" ? " tabBtnActive" : ""}`}
+                      className={`rrSegmentBtn${requestForm.locationMode === "auto" ? " rrSegmentBtnActive" : ""}`}
                       onClick={() => setRequestForm((f) => ({ ...f, locationMode: "auto" }))}
                       aria-pressed={requestForm.locationMode === "auto"}
                     >
@@ -894,7 +901,7 @@ function App() {
                     </button>
                     <button
                       type="button"
-                      className={`tabBtn${requestForm.locationMode === "manual" ? " tabBtnActive" : ""}`}
+                      className={`rrSegmentBtn${requestForm.locationMode === "manual" ? " rrSegmentBtnActive" : ""}`}
                       onClick={() => setRequestForm((f) => ({ ...f, locationMode: "manual" }))}
                       aria-pressed={requestForm.locationMode === "manual"}
                     >
@@ -903,12 +910,12 @@ function App() {
                   </div>
 
                   {requestForm.locationMode === "auto" ? (
-                    <div className="stack">
+                    <div className="rrStack" style={{ gap: 10 }}>
                       <button type="button" className="btn btnSecondary" onClick={requestLiveLocation}>
                         {locationState.status === "requesting" ? "Getting location…" : "Use my current location"}
                       </button>
 
-                      <div className="small">
+                      <div className="rrSmall">
                         {locationState.status === "granted" && locationState.coords
                           ? `Location: ${locationState.coords.lat}, ${locationState.coords.lng}`
                           : locationState.status === "denied"
@@ -921,7 +928,7 @@ function App() {
                       </div>
                     </div>
                   ) : (
-                    <div className="stack" style={{ gap: 10 }}>
+                    <div className="rrStack" style={{ gap: 10 }}>
                       <label className="label" htmlFor="address">
                         Address / landmark
                       </label>
@@ -935,77 +942,67 @@ function App() {
                     </div>
                   )}
 
-                  <div style={{ marginTop: 16 }}>
+                  <div className="rrStack" style={{ gap: 8 }}>
                     <button type="submit" className="btn btnPrimary">
                       Request help now
                     </button>
-                    <div className="helpText">
-                      Large action button for emergencies. This will create a mock request in-app only.
-                    </div>
+                    <div className="rrSmall">Large action button for emergencies. This will create a mock request in-app only.</div>
                   </div>
                 </form>
               )}
-            </section>
+            </Card>
           </div>
 
-          <div className="stack">
-            <section className="card" aria-label="Real-time tracking">
-              <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center" }}>
-                <h2 className="cardTitle" style={{ marginBottom: 0 }}>
-                  Real-time tracking (placeholder)
-                </h2>
-                {activeRequest ? (
-                  <span className={`pill${activeRequest.status === "Completed" ? " pillSuccess" : ""}`}>
-                    {activeRequest.status}
-                  </span>
+          <div className="rrStack">
+            <Card
+              title="Real-time tracking (placeholder)"
+              right={
+                activeRequest ? (
+                  <StatusPill tone={activeRequest.status === "Completed" ? "success" : "neutral"}>{activeRequest.status}</StatusPill>
                 ) : (
-                  <span className="pill">No active request</span>
-                )}
-              </div>
-
-              <div style={{ marginTop: 16 }}>
-                {activeRequest ? (
-                  <div className="stack">
-                    <div className="stack" style={{ gap: 4 }}>
-                      <div style={{ fontWeight: 900, color: THEME.text }}>{activeRequest.issueType}</div>
-                      <div className="small">{activeRequest.vehicle}</div>
-                      <div className="small">
-                        Request ID: <strong>{activeRequest.id}</strong> · Created{" "}
-                        {new Date(activeRequest.createdAt).toLocaleTimeString()}
-                      </div>
-                    </div>
-
-                    <MapPlaceholder
-                      title="Map (you + mechanic)"
-                      subtitle={activeRequest.mechanic.assigned ? `ETA ~ ${activeRequest.mechanic.etaMins} min` : "Assigning mechanic…"}
-                    />
-
-                    <div className="stack" style={{ gap: 6 }}>
-                      <div style={{ fontWeight: 900, color: THEME.primary }}>Assigned mechanic</div>
-                      <div className="small">
-                        {activeRequest.mechanic.assigned ? (
-                          <>
-                            <strong>{activeRequest.mechanic.name}</strong> · {activeRequest.mechanic.vehicle}
-                          </>
-                        ) : (
-                          "Pending assignment…"
-                        )}
-                      </div>
-                    </div>
-
-                    <button type="button" className="btn btnSecondary" onClick={advanceTrackingStatus}>
-                      Simulate status update
-                    </button>
-
-                    <div className="small">
-                      This is a UI placeholder. Real-time updates will use WebSocket/push once connected.
+                  <StatusPill tone="warning">No active request</StatusPill>
+                )
+              }
+              subtitle="Real-time updates will be wired later"
+            >
+              {activeRequest ? (
+                <div className="rrStack" style={{ gap: 12 }}>
+                  <div className="rrStack" style={{ gap: 4 }}>
+                    <div style={{ fontWeight: 900, color: THEME.text }}>{activeRequest.issueType}</div>
+                    <div className="rrSmall">{activeRequest.vehicle}</div>
+                    <div className="rrSmall">
+                      Request ID: <strong>{activeRequest.id}</strong> · Created {new Date(activeRequest.createdAt).toLocaleTimeString()}
                     </div>
                   </div>
-                ) : (
-                  <div className="small">Submit a request to see tracking, map placeholder, and status indicators.</div>
-                )}
-              </div>
-            </section>
+
+                  <MapPlaceholder
+                    title="Map (you + mechanic)"
+                    subtitle={activeRequest.mechanic.assigned ? `ETA ~ ${activeRequest.mechanic.etaMins} min` : "Assigning mechanic…"}
+                  />
+
+                  <div className="rrStack" style={{ gap: 6 }}>
+                    <div style={{ fontWeight: 900, color: THEME.primary }}>Assigned mechanic</div>
+                    <div className="rrSmall">
+                      {activeRequest.mechanic.assigned ? (
+                        <>
+                          <strong>{activeRequest.mechanic.name}</strong> · {activeRequest.mechanic.vehicle}
+                        </>
+                      ) : (
+                        "Pending assignment…"
+                      )}
+                    </div>
+                  </div>
+
+                  <button type="button" className="btn btnSecondary" onClick={advanceTrackingStatus}>
+                    Simulate status update
+                  </button>
+
+                  <div className="rrSmall">This is a UI placeholder. Real-time updates will use WebSocket/push once connected.</div>
+                </div>
+              ) : (
+                <div className="rrSmall">Submit a request to see tracking, map placeholder, and status indicators.</div>
+              )}
+            </Card>
 
             <EstimateCard />
             <PaymentsCard />
@@ -1019,44 +1016,35 @@ function App() {
 
   const MechanicPortal = () => {
     return (
-      <div className="stack">
-        <div className="hero">
-          <h1 className="heroTitle">Mechanic Portal</h1>
-          <p className="heroDesc">
-            Manage assigned jobs, update statuses, verify service handoff, and communicate with customers (all stubs for now).
-          </p>
-        </div>
+      <div className="rrStack">
+        <SectionTitle
+          eyebrow="Mechanic Portal"
+          title="Manage assigned jobs"
+          description="Update statuses, verify service handoff, and communicate with customers (all stubs for now)."
+          right={<StatusPill tone="success">Ops</StatusPill>}
+        />
 
-        <div className="sectionGrid">
-          <div className="stack">
+        <div className="rrGrid2">
+          <div className="rrStack">
             <AuthCard />
 
-            <section className="card" aria-label="Job management">
-              <h2 className="cardTitle">Job management</h2>
-
+            <Card title="Job management" subtitle="Status updates also nudge the user tracking panel (demo behavior)">
               {!isAuthedForPortal ? (
-                <div className="small">Login to view jobs (stub).</div>
+                <div className="rrSmall">Login to view jobs (stub).</div>
               ) : (
-                <div className="stack">
+                <div className="rrStack" style={{ gap: 12 }}>
                   {mechanicJobs.map((job) => (
-                    <MechanicJobCard
-                      key={job.id}
-                      job={job}
-                      onUpdateStatus={mechanicUpdateJobStatus}
-                      onVerify={mechanicVerifyJob}
-                    />
+                    <MechanicJobCard key={job.id} job={job} onUpdateStatus={mechanicUpdateJobStatus} onVerify={mechanicVerifyJob} />
                   ))}
-                  <div className="small">Tip: Status updates here also nudge the user tracking panel (demo behavior).</div>
                 </div>
               )}
-            </section>
+            </Card>
           </div>
 
-          <div className="stack">
-            <section className="card" aria-label="Navigation and map">
-              <h2 className="cardTitle">Navigation / map (placeholder)</h2>
-              <MapPlaceholder title="Route to customer" subtitle="Turn-by-turn navigation will be integrated later." />
-              <div style={{ marginTop: 16 }} className="stack">
+          <div className="rrStack">
+            <Card title="Navigation / map (placeholder)" subtitle="Turn-by-turn navigation will be integrated later">
+              <MapPlaceholder title="Route to customer" subtitle="Routing + traffic data not connected." />
+              <div style={{ marginTop: 16 }} className="rrStack">
                 <button
                   type="button"
                   className="btn btnPrimary"
@@ -1065,9 +1053,9 @@ function App() {
                 >
                   Send quick ETA update to customer (stub)
                 </button>
-                <div className="small">Chat button activates once there is an active request in the app session.</div>
+                <div className="rrSmall">Chat button activates once there is an active request in the app session.</div>
               </div>
-            </section>
+            </Card>
 
             <ChatCard />
           </div>
@@ -1078,93 +1066,81 @@ function App() {
 
   const AdminPortal = () => {
     return (
-      <div className="stack">
-        <div className="hero">
-          <h1 className="heroTitle">Admin Dashboard</h1>
-          <p className="heroDesc">
-            Monitor platform activity, view simple analytics, and track operational health (mock data).
-          </p>
-        </div>
+      <div className="rrStack">
+        <SectionTitle
+          eyebrow="Admin"
+          title="Platform monitoring"
+          description="Mock analytics and operational health indicators for layout and interaction testing."
+          right={<StatusPill tone="warning">Dashboard</StatusPill>}
+        />
 
-        <div className="container">
-          <div className="stack">
-            <section className="card" aria-label="Admin controls">
-              <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center" }}>
-                <h2 className="cardTitle" style={{ marginBottom: 0 }}>
-                  Live monitoring (stub)
-                </h2>
-                <span className="pill">Updated {new Date(adminMetrics.lastUpdatedAt).toLocaleTimeString()}</span>
-              </div>
-
-              <div style={{ marginTop: 16 }} className="stack">
-                <button type="button" className="btn btnPrimary" onClick={refreshAdminMetrics}>
-                  Refresh metrics
-                </button>
-                <div className="small">No backend is connected. This simulates live data for layout and interaction testing.</div>
-              </div>
-            </section>
-
-            <div className="grid3">
-              <MetricCard label="Active requests" value={String(adminMetrics.activeRequests)} tone="neutral" />
-              <MetricCard label="Active mechanics" value={String(adminMetrics.activeMechanics)} tone="neutral" />
-              <MetricCard label="Avg ETA" value={`${adminMetrics.avgEtaMins} min`} tone="neutral" />
-              <MetricCard label="Completed today" value={String(adminMetrics.completedToday)} tone="success" />
-              <MetricCard label="Revenue today" value={formatMoney(adminMetrics.revenueToday)} tone="success" />
-              <MetricCard label="Satisfaction" value={`${adminMetrics.satisfaction}/5`} tone="success" />
-              <MetricCard label="Incidents" value={String(adminMetrics.incidents)} tone={adminMetrics.incidents > 0 ? "error" : "success"} />
+        <div className="rrStack">
+          <Card
+            title="Live monitoring (stub)"
+            subtitle={`Updated ${new Date(adminMetrics.lastUpdatedAt).toLocaleTimeString()}`}
+            right={<StatusPill tone="neutral">No backend</StatusPill>}
+          >
+            <div className="rrStack">
+              <button type="button" className="btn btnPrimary" onClick={refreshAdminMetrics}>
+                Refresh metrics
+              </button>
+              <div className="rrSmall">No backend is connected. This simulates live data for layout and interaction testing.</div>
             </div>
+          </Card>
 
-            <section className="card" aria-label="Admin map placeholder">
-              <h2 className="cardTitle">Operations map (placeholder)</h2>
-              <MapPlaceholder title="Active requests + mechanics" subtitle="Cluster view / heatmap placeholder." />
-            </section>
+          <div className="rrGrid3">
+            <MetricCard label="Active requests" value={String(adminMetrics.activeRequests)} tone="neutral" />
+            <MetricCard label="Active mechanics" value={String(adminMetrics.activeMechanics)} tone="neutral" />
+            <MetricCard label="Avg ETA" value={`${adminMetrics.avgEtaMins} min`} tone="neutral" />
+            <MetricCard label="Completed today" value={String(adminMetrics.completedToday)} tone="success" />
+            <MetricCard label="Revenue today" value={formatMoney(adminMetrics.revenueToday)} tone="success" />
+            <MetricCard label="Satisfaction" value={`${adminMetrics.satisfaction}/5`} tone="success" />
+            <MetricCard label="Incidents" value={String(adminMetrics.incidents)} tone={adminMetrics.incidents > 0 ? "error" : "success"} />
           </div>
+
+          <Card title="Operations map (placeholder)" subtitle="Cluster view / heatmap placeholder">
+            <MapPlaceholder title="Active requests + mechanics" subtitle="Map integration not configured." />
+          </Card>
         </div>
       </div>
     );
   };
 
-  return (
-    <div className="appShell">
-      <header className="navbar">
-        <div className="navbarInner">
-          <div className="brand">
-            <p className="brandTitle">RoadRescue QuickAssist</p>
-            <p className="brandSub">Emergency roadside assistance — multi-portal UI scaffold</p>
-          </div>
-          <PortalTabs />
-        </div>
-      </header>
-
-      <main className="container">
-        {activePortal === PORTALS.USER ? <UserPortal /> : null}
-        {activePortal === PORTALS.MECHANIC ? <MechanicPortal /> : null}
-        {activePortal === PORTALS.ADMIN ? <AdminPortal /> : null}
-      </main>
-
-      <footer className="footerNote">
-        UI stubs only: maps, real-time tracking, chat, payments, and auth are placeholders until services/APIs are connected.
-      </footer>
+  const topbarExtras = (
+    <div className="rrTopBarExtras">
+      <StatusPill tone={portalTone}>{portalLabel}</StatusPill>
+      {isAuthedForPortal ? <StatusPill tone="success">Signed in</StatusPill> : <StatusPill tone="neutral">Guest</StatusPill>}
     </div>
+  );
+
+  return (
+    <AppShell
+      brandTitle="RoadRescue QuickAssist"
+      brandSubtitle="Emergency roadside assistance — multi-portal UI scaffold"
+      sidebar={<Sidebar />}
+      topbarExtras={topbarExtras}
+      mobileMenuOpen={mobileMenuOpen}
+      setMobileMenuOpen={setMobileMenuOpen}
+    >
+      {activePortal === PORTALS.USER ? <UserPortal /> : null}
+      {activePortal === PORTALS.MECHANIC ? <MechanicPortal /> : null}
+      {activePortal === PORTALS.ADMIN ? <AdminPortal /> : null}
+    </AppShell>
   );
 }
 
 // PUBLIC_INTERFACE
 function MetricCard({ label, value, tone }) {
-  const pillClass =
-    tone === "success" ? "pill pillSuccess" : tone === "error" ? "pill pillError" : tone === "warning" ? "pill pillWarn" : "pill";
-
+  const pillTone = tone === "success" ? "success" : tone === "error" ? "error" : tone === "warning" ? "warning" : "neutral";
   return (
-    <section className="card" aria-label={label}>
-      <h2 className="cardTitle">{label}</h2>
-      <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "baseline" }}>
-        <div style={{ fontSize: 22, fontWeight: 950, color: THEME.text }}>{value}</div>
-        <span className={pillClass}>{tone}</span>
-      </div>
-      <div style={{ marginTop: 10 }} className="small">
-        Analytics placeholder
-      </div>
-    </section>
+    <Card
+      title={label}
+      right={<StatusPill tone={pillTone}>{tone}</StatusPill>}
+      subtitle="Analytics placeholder"
+      className="rrMetricCard"
+    >
+      <div style={{ fontSize: 26, fontWeight: 950, color: THEME.text }}>{value}</div>
+    </Card>
   );
 }
 
@@ -1173,40 +1149,35 @@ function MechanicJobCard({ job, onUpdateStatus, onVerify }) {
   const [codeAttempt, setCodeAttempt] = useState("");
 
   return (
-    <div className="panel">
-      <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center" }}>
+    <div className="panel rrPanelTight">
+      <div className="rrRowBetween rrGap2" style={{ alignItems: "center" }}>
         <div>
           <div style={{ fontWeight: 950, color: THEME.text }}>{job.id}</div>
-          <div className="small">
+          <div className="rrSmall">
             {job.customerName} · {job.vehicle}
           </div>
         </div>
-        <span className={`pill${job.status === "Completed" ? " pillSuccess" : ""}`}>{job.status}</span>
+        <StatusPill tone={job.status === "Completed" ? "success" : "neutral"}>{job.status}</StatusPill>
       </div>
 
-      <div style={{ marginTop: 14 }} className="stack" aria-label={`${job.id} details`}>
+      <div style={{ marginTop: 14 }} className="rrStack" aria-label={`${job.id} details`}>
         <div style={{ fontWeight: 900, color: THEME.primary, fontSize: 13 }}>{job.issueType}</div>
-        <div className="small">
+        <div className="rrSmall">
           Location: <strong>{job.location}</strong>
         </div>
-        <div className="small">
+        <div className="rrSmall">
           ETA: <strong>{job.etaMins} min</strong> · Updated {new Date(job.updatedAt).toLocaleTimeString()}
         </div>
       </div>
 
-      <div className="divider" />
+      <div className="rrDivider" />
 
-      <div className="stack">
+      <div className="rrStack" style={{ gap: 12 }}>
         <div>
           <label className="label" htmlFor={`status-${job.id}`}>
             Update status
           </label>
-          <select
-            id={`status-${job.id}`}
-            className="select"
-            value={job.status}
-            onChange={(e) => onUpdateStatus(job.id, e.target.value)}
-          >
+          <select id={`status-${job.id}`} className="select" value={job.status} onChange={(e) => onUpdateStatus(job.id, e.target.value)}>
             {ASSISTANCE_STATUSES.filter((s) => s !== "Draft").map((s) => (
               <option key={s} value={s}>
                 {s}
@@ -1215,21 +1186,19 @@ function MechanicJobCard({ job, onUpdateStatus, onVerify }) {
           </select>
         </div>
 
-        <div className="card" style={{ padding: 16, boxShadow: "none" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center" }}>
+        <div className="rrInsetCard">
+          <div className="rrRowBetween rrGap2" style={{ alignItems: "center" }}>
             <div style={{ fontWeight: 950, color: THEME.primary }}>Verification</div>
-            <span className={`pill${job.verification.verified ? " pillSuccess" : ""}`}>
+            <StatusPill tone={job.verification.verified ? "success" : "warning"}>
               {job.verification.verified ? "verified" : "pending"}
-            </span>
+            </StatusPill>
           </div>
 
-          <div style={{ marginTop: 8 }} className="small">
-            {job.verification.required
-              ? "Ask the customer for their verification code before completing service."
-              : "Verification not required."}
+          <div style={{ marginTop: 8 }} className="rrSmall">
+            {job.verification.required ? "Ask the customer for their verification code before completing service." : "Verification not required."}
           </div>
 
-          <div style={{ marginTop: 14 }} className="stack">
+          <div style={{ marginTop: 14 }} className="rrStack" style={{ gap: 10 }}>
             <label className="label" htmlFor={`code-${job.id}`}>
               Enter code (demo code: {job.verification.code})
             </label>
